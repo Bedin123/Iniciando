@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Questão MUITO Séria 😇</title>
+  <style>
+    :root{
+      --bg1:#0f1020; --bg2:#14162b; --acc:#7c5cff; --acc2:#00d4ff; --ok:#22c55e; --no:#ef4444;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,sans-serif; color:#e6e6f0;
+      background: radial-gradient(1200px 600px at 10% -10%, #1c1f4a55, transparent 60%),
+                  radial-gradient(1000px 800px at 110% 10%, #0aa2ff25, transparent 60%),
+                  linear-gradient(160deg,var(--bg1),var(--bg2));
+      overflow:hidden;
+    }
+    .wrap{position:relative; height:100%; display:grid; place-items:center; padding:24px;}
+    .card{
+      width:min(560px, 92vw); background:#111429cc; backdrop-filter: blur(6px); border:1px solid #2b2f55; 
+      border-radius:24px; padding:28px; box-shadow: 0 10px 40px #00000066;
+      animation: pop 400ms cubic-bezier(.2,.9,.2,1); z-index:10;
+    }
+    @keyframes pop{from{transform:scale(.9); opacity:.0}to{transform:scale(1); opacity:1}}
+    h1{margin:0 0 8px; font-size:clamp(20px, 4vw, 30px);}
+    p.sub{margin:0 0 20px; opacity:.8}
+    .buttons{display:flex; gap:14px; flex-wrap:wrap}
+    button{
+      position:relative; border:1px solid #2e335a; background:#171a35; color:#fff; 
+      padding:12px 18px; border-radius:999px; font-weight:600; cursor:pointer; 
+      transition: transform .08s ease, background .2s ease, box-shadow .2s ease;
+      touch-action:none; user-select:none; -webkit-tap-highlight-color: transparent; z-index:20;
+    }
+    button:active{transform:scale(.98)}
+    .btn-yes{background: linear-gradient(135deg,var(--ok),#16a34a); border:0; box-shadow:0 8px 24px #22c55e33}
+    .btn-no{background: linear-gradient(135deg,#d946ef,#ef4444); border:0; box-shadow:0 8px 24px #ef444433}
+
+    .float-area{position:fixed; inset:0; z-index:1;} /* removi pointer-events:none */
+
+    .footer{margin-top:14px; font-size:12px; opacity:.6}
+    .tiny{font-size:11px; opacity:.7}
+
+    .step{display:none}
+    .step.active{display:block}
+    .progress{height:10px; border-radius:999px; background:#23264b; overflow:hidden; border:1px solid #2b2f55}
+    .bar{height:100%; width:0%; background:linear-gradient(90deg,var(--acc),var(--acc2)); transition:width .35s ease}
+
+    .confetti{position:fixed; top:-10vh; font-size:clamp(18px,3vw,28px); animation: fall linear forwards; z-index:5;}
+    @keyframes fall{to{transform:translateY(120vh) rotate(720deg); opacity:.9}}
+
+    .guard{position:fixed; inset:12px; z-index:2;}
+
+    @media (max-width:460px){ .buttons{gap:10px} button{padding:12px 16px} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" id="card">
+      <h1>Pedido URGENTE do RH 🔥</h1>
+      <p class="sub">Confirme aqui se você <b>aprova imediatamente</b> o pedido do colaborador para um pequeno aumento 🙂</p>
+      <div class="buttons">
+        <button class="btn-yes" id="yes">Aprovo agora</button>
+        <button class="btn-no" id="no">Nããão 😬</button>
+      </div>
+      <p class="footer tiny">*Ao clicar em “Nããão”, você aceita os Termos de Fuga do Botão conforme a LGPD do Universo Paralelo.</p>
+
+      <div id="steps">
+        <div class="step" id="step-scan">
+          <p>🔍 Verificando boa vontade gerencial…</p>
+          <div class="progress"><div class="bar" id="bar"></div></div>
+          <p class="tiny" id="scanMsg"></p>
+        </div>
+        <div class="step" id="step-captcha">
+          <p>✅ Quase lá! Prove que você não é um robô. Digite:<br><b>“eu te amo, funcionário”</b></p>
+          <input id="captcha" placeholder="digite aqui" style="width:100%; padding:12px; border-radius:12px; border:1px solid #2b2f55; background:#0e1230; color:#fff; margin:10px 0" />
+          <button class="btn-yes" id="captchaBtn">Validar</button>
+          <p class="tiny" id="captchaHint"></p>
+        </div>
+        <div class="step" id="step-done">
+          <h2>🎉 Pedido aprovado com sucesso!</h2>
+          <p>Um e-mail <i>quase real</i> foi enviado para o RH confirmando sua incrível generosidade. Brincadeirinha 😉</p>
+          <button class="btn-yes" id="celebrate">Soltar confete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="guard" id="guard"></div>
+  <div class="float-area" id="float"></div>
+
+<script>
+(function(){
+  const btnNo = document.getElementById('no');
+  const btnYes = document.getElementById('yes');
+  const guard = document.getElementById('guard');
+  const float = document.getElementById('float');
+  const steps = document.getElementById('steps');
+  const scan = document.getElementById('step-scan');
+  const bar = document.getElementById('bar');
+  const scanMsg = document.getElementById('scanMsg');
+  const captchaStep = document.getElementById('step-captcha');
+  const captchaInput = document.getElementById('captcha');
+  const captchaBtn = document.getElementById('captchaBtn');
+  const captchaHint = document.getElementById('captchaHint');
+  const done = document.getElementById('step-done');
+  const celebrate = document.getElementById('celebrate');
+  const card = document.getElementById('card');
+
+  let tries = 0;
+
+  function clamp(v, min, max){ return Math.min(max, Math.max(min, v)); }
+  function rnd(min, max){ return Math.random()*(max-min)+min; }
+
+  function moveNo(){
+    const g = guard.getBoundingClientRect();
+    const b = btnNo.getBoundingClientRect();
+    const pad = 10;
+    const maxLeft = g.right - b.width - pad;
+    const maxTop  = g.bottom - b.height - pad;
+    const left = clamp(rnd(g.left+pad, maxLeft), g.left+pad, maxLeft);
+    const top  = clamp(rnd(g.top+pad,  maxTop),  g.top+pad,  maxTop);
+
+    btnNo.style.position = 'fixed';
+    btnNo.style.left = left + 'px';
+    btnNo.style.top  = top  + 'px';
+    btnNo.style.transform = 'rotate(' + Math.round(rnd(-10,10)) + 'deg)';
+
+    if(++tries % 3 === 0 && document.querySelectorAll('.decoy').length < 4){
+      spawnDecoy();
+    }
+  }
+
+  function spawnDecoy(){
+    const d = btnNo.cloneNode(true);
+    d.classList.add('decoy');
+    d.textContent = ['Nem pensar','Jamais','Depois vemos','Hahaha não'][Math.floor(Math.random()*4)];
+    d.style.opacity = .9;
+    d.style.zIndex = 15;
+    document.body.appendChild(d);
+
+    d.addEventListener('mouseenter', moveAway(d));
+    d.addEventListener('mousemove', moveAway(d));
+    d.addEventListener('touchstart', moveAway(d), {passive:false});
+
+    const g = guard.getBoundingClientRect();
+    const w = d.getBoundingClientRect().width;
+    const h = d.getBoundingClientRect().height;
+    d.style.position='fixed';
+    d.style.left = clamp(rnd(g.left+10, g.right-w-10), g.left+10, g.right-w-10) + 'px';
+    d.style.top  = clamp(rnd(g.top +10, g.bottom-h-10), g.top +10, g.bottom-h-10) + 'px';
+  }
+
+  function moveAway(target){
+    return function(ev){
+      ev.preventDefault();
+      const g = guard.getBoundingClientRect();
+      const b = target.getBoundingClientRect();
+      const pad = 10;
+      const maxLeft = g.right - b.width - pad;
+      const maxTop  = g.bottom - b.height - pad;
+      const left = clamp(rnd(g.left+pad, maxLeft), g.left+pad, maxLeft);
+      const top  = clamp(rnd(g.top+pad,  maxTop),  g.top+pad,  maxTop);
+      target.style.left = left + 'px';
+      target.style.top  = top  + 'px';
+    }
+  }
+
+  btnNo.addEventListener('mouseenter', moveNo);
+  btnNo.addEventListener('mousemove', moveNo);
+  btnNo.addEventListener('touchstart', function(e){ e.preventDefault(); moveNo(e); }, {passive:false});
+
+  btnYes.addEventListener('click', ()=>{
+    btnYes.disabled = true; btnNo.disabled = true;
+    steps.scrollIntoView({behavior:'smooth', block:'center'});
+    showStep(scan);
+    simulateScan();
+  });
+
+  function showStep(el){
+    [scan, captchaStep, done].forEach(s=>s.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function simulateScan(){
+    let p = 0;
+    const msgs = [
+      'Consultando planilha secreta de aumentos…',
+      'Comparando KPI com paciência do time…',
+      'Checando limite do cartão da empresa…',
+      'Quase, quase… preparando confete…'
+    ];
+    const int = setInterval(()=>{
+      p = clamp(p + Math.floor(rnd(8, 24)), 0, 100);
+      bar.style.width = p + '%';
+      scanMsg.textContent = msgs[Math.min(msgs.length-1, Math.floor(p/25))];
+      if(p >= 100){
+        clearInterval(int);
+        setTimeout(()=>{
+          showStep(captchaStep);
+          captchaInput.focus();
+        }, 400);
+      }
+    }, 500);
+  }
+
+  captchaBtn.addEventListener('click', ()=>{
+    const val = (captchaInput.value||'').trim().toLowerCase();
+    if(val === 'eu te amo, funcionário' || val === 'eu te amo funcionario'){
+      showStep(done);
+    } else {
+      captchaHint.textContent = '❌ Quase! Dica: tem vírgula e acento 😉';
+      card.animate(
+        [{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],
+        {duration:220}
+      );
+      captchaInput.focus();
+    }
+  });
+
+  celebrate.addEventListener('click', fireConfetti);
+
+  function fireConfetti(){
+    const icons = ['🎉','🎊','💸','🪙','✨','🤑','👏','💼'];
+    for(let i=0;i<80;i++){
+      const span = document.createElement('span');
+      span.className = 'confetti';
+      span.textContent = icons[Math.floor(Math.random()*icons.length)];
+      span.style.left = Math.random()*100 + 'vw';
+      span.style.animationDuration = (1.5 + Math.random()*2.5) + 's';
+      float.appendChild(span);
+      setTimeout(()=>span.remove(), 5000);
+    }
+  }
+})();
+</script>
+</body>
+</html>
